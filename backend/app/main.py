@@ -1,9 +1,4 @@
-"""
-CineTech - Backend Inicial (Ponto de Partida)
-Este é o único arquivo fornecido. Seu objetivo inicial é apenas verificar se o servidor roda.
-Todo o restante (routers, services, schemas e banco de dados) deve ser criado pela equipe
-seguindo o guia em: docs/2_PRD_BACKEND.md
-"""
+
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
