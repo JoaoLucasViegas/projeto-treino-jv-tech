@@ -192,7 +192,7 @@ const MovieCard = ({ movie, onOpenReview, isFavorited }: MovieCardProps) => {
 
         <div style={{ ...styles.overlay, ...(hovered ? styles.overlayHover : {}) }} />
 
-        {movie.rating !== undefined && (
+        {movie.rating != null && (
           <div style={styles.ratingBadge}>
             <Star size={12} fill="#FFD54F" color="#FFD54F" />
             {movie.rating.toFixed(1)}

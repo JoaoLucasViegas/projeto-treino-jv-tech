@@ -2,23 +2,12 @@ import { useEffect, useState, FormEvent, CSSProperties } from 'react';
 import { Search } from 'lucide-react';
 import MovieCard from '../components/MovieCard';
 import { Movie } from '../types';
-import { mockMovies } from '../services/mockData';
+import { getDefaultMovies, searchMovies } from '../services/api';
 
 interface CatalogPageProps {
   onOpenReview: (movie: Movie) => void;
   favoriteMovieIds: number[];
 }
-
-// Busca de filmes. Hoje consome o mock; para usar a API real, troque apenas o corpo
-// desta função (fetch + retorno de Movie[]). O resto da página não muda.
-const searchMovies = async (query: string): Promise<Movie[]> => {
-  const normalize = (text: string) =>
-    text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').toLowerCase();
-
-  const term = normalize(query.trim());
-  if (!term) return mockMovies;
-  return mockMovies.filter((movie) => normalize(movie.title).includes(term));
-};
 
 // Tokens Material Design 3 (--md-sys-color-*). O fallback é o tema escuro baseline.
 const token = (name: string, fallback: string) => `var(--md-sys-color-${name}, ${fallback})`;
@@ -144,6 +133,7 @@ const CatalogPage = ({ onOpenReview, favoriteMovieIds }: CatalogPageProps) => {
   const [query, setQuery] = useState('');
   const [movies, setMovies] = useState<Movie[]>([]);
   const [loading, setLoading] = useState(false);
+  const [error, setError] = useState(false);
   const [inputHovered, setInputHovered] = useState(false);
   const [focused, setFocused] = useState(false);
   const [buttonHovered, setButtonHovered] = useState(false);
@@ -151,19 +141,42 @@ const CatalogPage = ({ onOpenReview, favoriteMovieIds }: CatalogPageProps) => {
 
   const runSearch = async (term: string) => {
     setLoading(true);
-    const results = await searchMovies(term);
-    setMovies(results);
-    setLoading(false);
+    setError(false);
+    try {
+      setMovies(await searchMovies(term));
+    } catch {
+      setMovies([]);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  // Carrega o catálogo completo ao abrir a página
+  const loadDefaultMovies = async () => {
+    setLoading(true);
+    setError(false);
+    try {
+      setMovies(await getDefaultMovies());
+    } catch {
+      setMovies([]);
+      setError(true);
+    } finally {
+      setLoading(false);
+    }
+  };
+
   useEffect(() => {
-    runSearch('');
+    loadDefaultMovies();
   }, []);
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
-    runSearch(query);
+    const term = query.trim();
+    if (!term) {
+      loadDefaultMovies();
+      return;
+    }
+    runSearch(term);
   };
 
   const inputWrapperStyle: CSSProperties = {
@@ -215,8 +228,14 @@ const CatalogPage = ({ onOpenReview, favoriteMovieIds }: CatalogPageProps) => {
 
         {loading ? (
           <p style={styles.message}>Buscando...</p>
+        ) : error ? (
+          <p style={styles.message}>
+            Não foi possível carregar os filmes
+          </p>
         ) : movies.length === 0 ? (
-          <p style={styles.message}>Nenhum título encontrado.</p>
+          <p style={styles.message}>
+            Nenhum título encontrado.
+          </p>
         ) : (
           <section style={styles.grid}>
             {movies.map((movie) => (

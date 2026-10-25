@@ -3,7 +3,7 @@ export interface Movie {
   title: string;
   summary: string;
   image?: string;
-  rating?: number;
+  rating?: number | null;
   genres: string[];
 }
 
