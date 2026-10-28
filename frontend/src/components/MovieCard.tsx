@@ -1,9 +1,11 @@
 import { useState, CSSProperties } from 'react';
-import { Star, PlusCircle, Check, Film } from 'lucide-react';
+import { Star, PlusCircle, Check, Film, ChevronRight } from 'lucide-react';
 import { Movie } from '../types';
+import { localizeMovieGenre } from '../utils/movieGenres';
 
 interface MovieCardProps {
   movie: Movie;
+  onOpenDetails: (movie: Movie) => void;
   onOpenReview: (movie: Movie) => void;
   isFavorited: boolean;
 }
@@ -97,6 +99,7 @@ const styles: Record<string, CSSProperties> = {
     fontWeight: 600,
   },
   info: { display: 'flex', flexDirection: 'column', gap: 8, flex: 1 },
+  titleRow: { display: 'flex', alignItems: 'baseline', gap: 6, minWidth: 0 },
   title: {
     margin: 0,
     fontSize: 14,
@@ -110,8 +113,57 @@ const styles: Record<string, CSSProperties> = {
     transition: `color 300ms ${emphasized}`,
   },
   titleHover: { color: color.primary },
-  genres: { display: 'flex', flexWrap: 'wrap', gap: 6 },
+  year: {
+    flexShrink: 0,
+    color: color.onSurfaceVariant,
+    fontSize: 12,
+    lineHeight: '20px',
+  },
+  summary: {
+    margin: 0,
+    color: color.onSurfaceVariant,
+    fontSize: 12,
+    lineHeight: '17px',
+    display: '-webkit-box',
+    WebkitBoxOrient: 'vertical',
+    WebkitLineClamp: 3,
+    overflow: 'hidden',
+  },
+  detailsButton: {
+    display: 'inline-flex',
+    alignItems: 'center',
+    alignSelf: 'flex-start',
+    gap: 2,
+    minHeight: 32,
+    padding: '0 8px',
+    marginLeft: -8,
+    border: 'none',
+    borderRadius: 16,
+    background: 'transparent',
+    color: color.primary,
+    fontFamily: 'inherit',
+    fontSize: 12,
+    fontWeight: 600,
+    cursor: 'pointer',
+    marginTop: 'auto',
+    transition: `background 300ms ${emphasized}`,
+  },
+  detailsButtonHover: { background: primaryTint },
+  genres: {
+    display: 'flex',
+    flexWrap: 'nowrap',
+    alignItems: 'center',
+    gap: 6,
+    minWidth: 0,
+    flex: '0 0 24px',
+    overflow: 'hidden',
+  },
   genreTag: {
+    flex: '0 1 auto',
+    minWidth: 0,
+    overflow: 'hidden',
+    textOverflow: 'ellipsis',
+    whiteSpace: 'nowrap',
     padding: '2px 10px',
     borderRadius: 999,
     border: `1px solid ${outline}`,
@@ -121,7 +173,14 @@ const styles: Record<string, CSSProperties> = {
     letterSpacing: '0.5px',
     transition: `border-color 300ms ${emphasized}, color 300ms ${emphasized}`,
   },
-  genreTagHover: { borderColor: primaryBorderSoft, color: color.onSurface },
+  moreGenres: {
+    flex: '0 0 auto',
+    color: color.onSurfaceVariant,
+    fontSize: 10,
+    lineHeight: '16px',
+    whiteSpace: 'nowrap',
+  },
+  genreTagHover: { border: `1px solid ${primaryBorderSoft}`, color: color.onSurface },
   button: {
     display: 'flex',
     alignItems: 'center',
@@ -141,21 +200,22 @@ const styles: Record<string, CSSProperties> = {
     transition: `background 300ms ${emphasized}, color 300ms ${emphasized}, border-color 300ms ${emphasized}`,
   },
   // Card em hover: o botão ganha uma tinta primária suave...
-  buttonCardHover: { background: primaryTint, borderColor: primaryRing, color: color.primary },
+  buttonCardHover: { background: primaryTint, border: `1px solid ${primaryRing}`, color: color.primary },
   // ...e só o hover no próprio botão o preenche por completo.
-  buttonHover: { background: color.primary, borderColor: color.primary, color: color.onPrimary },
+  buttonHover: { background: color.primary, border: `1px solid ${color.primary}`, color: color.onPrimary },
   buttonFavorited: {
     background: 'transparent',
-    borderColor: color.primary,
+    border: `1px solid ${color.primary}`,
     color: color.primary,
   },
   buttonFavoritedCardHover: { background: primaryTint },
   buttonFavoritedHover: { background: primaryTintStrong },
 };
 
-const MovieCard = ({ movie, onOpenReview, isFavorited }: MovieCardProps) => {
+const MovieCard = ({ movie, onOpenDetails, onOpenReview, isFavorited }: MovieCardProps) => {
   const [hovered, setHovered] = useState(false);
   const [buttonHovered, setButtonHovered] = useState(false);
+  const [detailsHovered, setDetailsHovered] = useState(false);
 
   const buttonStyle: CSSProperties = {
     ...styles.button,
@@ -201,23 +261,56 @@ const MovieCard = ({ movie, onOpenReview, isFavorited }: MovieCardProps) => {
       </div>
 
       <div style={styles.info}>
-        <h3
-          style={{ ...styles.title, ...(hovered ? styles.titleHover : {}) }}
-          title={movie.title}
-        >
-          {movie.title}
-        </h3>
+        <div style={styles.titleRow}>
+          <h3
+            style={{ ...styles.title, ...(hovered ? styles.titleHover : {}) }}
+            title={movie.title}
+          >
+            {movie.title}
+          </h3>
+          {movie.year != null && <span style={styles.year}>{movie.year}</span>}
+        </div>
 
-        <div style={styles.genres}>
-          {movie.genres.map((genre) => (
+        <p style={styles.summary} title={movie.summary || undefined}>
+          {movie.summary?.trim() || 'Sinopse indisponível.'}
+        </p>
+
+        <div
+          style={styles.genres}
+          aria-label={
+            movie.genres.length
+              ? `Gêneros: ${movie.genres.map(localizeMovieGenre).join(', ')}`
+              : 'Gêneros não informados'
+          }
+        >
+          {movie.genres.slice(0, 1).map((genre) => (
             <span
               key={genre}
               style={{ ...styles.genreTag, ...(hovered ? styles.genreTagHover : {}) }}
+              title={genre}
             >
-              {genre}
+              {localizeMovieGenre(genre)}
             </span>
           ))}
+          {movie.genres.length > 1 && (
+            <span style={styles.moreGenres}>+{movie.genres.length - 1}</span>
+          )}
+          {movie.genres.length === 0 && (
+            <span style={styles.moreGenres}>Gêneros não informados</span>
+          )}
         </div>
+
+        <button
+          type="button"
+          style={{ ...styles.detailsButton, ...(detailsHovered ? styles.detailsButtonHover : {}) }}
+          onClick={() => onOpenDetails(movie)}
+          onMouseEnter={() => setDetailsHovered(true)}
+          onMouseLeave={() => setDetailsHovered(false)}
+          aria-label={`Ver detalhes completos de ${movie.title}`}
+        >
+          Ver detalhes
+          <ChevronRight size={16} />
+        </button>
       </div>
 
       <button

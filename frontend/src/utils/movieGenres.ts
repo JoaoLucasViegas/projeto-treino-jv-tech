@@ -1,0 +1,32 @@
+const genreLabels: Record<string, string> = {
+  action: 'Ação',
+  adventure: 'Aventura',
+  animation: 'Animação',
+  children: 'Infantil',
+  comedy: 'Comédia',
+  crime: 'Crime',
+  diy: 'Faça você mesmo',
+  drama: 'Drama',
+  espionage: 'Espionagem',
+  family: 'Família',
+  fantasy: 'Fantasia',
+  food: 'Culinária',
+  history: 'História',
+  horror: 'Terror',
+  legal: 'Jurídico',
+  medical: 'Médico',
+  music: 'Musical',
+  mystery: 'Mistério',
+  nature: 'Natureza',
+  romance: 'Romance',
+  'science-fiction': 'Ficção científica',
+  sports: 'Esportes',
+  supernatural: 'Sobrenatural',
+  thriller: 'Suspense',
+  travel: 'Viagem',
+  war: 'Guerra',
+  western: 'Faroeste',
+};
+
+export const localizeMovieGenre = (genre: string) =>
+  genreLabels[genre.toLowerCase()] ?? genre;

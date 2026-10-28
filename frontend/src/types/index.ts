@@ -5,6 +5,7 @@ export interface Movie {
   image?: string;
   rating?: number | null;
   genres: string[];
+  year?: number | null;
 }
 
 export type FavoriteStatus = 'assistido' | 'quero_assistir';
